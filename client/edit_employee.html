@@ -1,0 +1,229 @@
+
+<html>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
+<script>
+let token = sessionStorage["token"]
+let str = location.pathname.substring(1, location.pathname.length);
+let pathToFolder = str.split("/").slice(0, -1).join("/")+"/";
+let empId;
+async function update_shift_emp(obj)
+{
+  let fetchParams = {method : 'POST',
+                      body : JSON.stringify(obj),
+                      headers :{'Content-Type':'application/json','x-access-token':token}
+                      }
+    let resp = await fetch("http://localhost:5000/shift_emp",fetchParams);
+    let data =  resp.json()
+    if(data["Error_autorized"]){
+        alert(data["Error_autorized"]);
+        logout()
+    }
+    if(data["Error"]){
+      alert(data["Error"]);
+    }
+}
+async function update_emp()
+{
+  const params = new URLSearchParams(location.search);
+  empId = params.get("emp_id");
+  if (document.getElementById("FirstName").value == ''){
+    alert("Error - The First Name field cannot be empty")
+  }      
+  else if (document.getElementById("LastName").value == ''){
+    alert("Error - The Last Name field cannot be empty")
+  }
+  else if (document.getElementById("StartWorkYear").value == ''){
+    alert("Error - The Start Work Year field cannot be empty")
+  }
+  else if (document.getElementById("Department").value == ''){
+    alert("Error - The Department field cannot be empty")
+  }
+  else{
+    let obj = {FirstName : document.getElementById("FirstName").value,
+                LastName : document.getElementById("LastName").value,
+                StartWorkYear : document.getElementById("StartWorkYear").value,
+                departmentName : document.getElementById("Department").value}
+    
+      let fetchParams = {method : 'PUT',
+                        body : JSON.stringify(obj),
+                        headers :{'Content-Type':'application/json','x-access-token':token}
+                        }
+      let resp = await fetch("http://localhost:5000/employee/"+empId,fetchParams);
+      let result =  await resp.json()
+      if(result["Error_autorized"]){
+        alert(result["Error_autorized"]);
+        logout()
+    }
+    if(result["Error"]){
+      alert(result["Error"]);
+    }
+    else{
+      result.forEach(element =>{ 
+        if (Object.keys(element) == 'Error'){
+          {alert(element.Error)};
+        }//end if
+    else {
+        alert(element.Success)
+      }//end else
+        })//end foreach
+    }
+        
+   }
+}
+
+async function loadData()
+{
+  const params = new URLSearchParams(location.search);
+  empId = params.get("emp_id");
+    let resp = await fetch("http://localhost:5000/employee/" + empId,{headers:{'x-access-token':token}});
+    let data =  await resp.json();
+    if(data["Error_autorized"]){
+        alert(data["Error_autorized"]);
+        logout()
+    }
+    if(data["Error"]){
+      alert(data["Error"]);
+    }
+    let resp1 = await fetch("http://localhost:5000/shift/",{headers:{'x-access-token':token}});
+    let all_shifts =  await resp1.json();
+    if(all_shifts["Error_autorized"]){
+        alert(all_shifts["Error_autorized"]);
+        logout()
+    }
+    if(all_shifts["Error"]){
+      alert(all_shifts["Error"]);
+    }
+    let body = document.getElementById("tBody");
+    document.getElementById("FirstName").value = data.FirstName;
+    document.getElementById("LastName").value = data.LastName;
+    document.getElementById("Department").value = data.Department;
+    document.getElementById("StartWorkYear").value = data.StartWorkYear;
+    shift_array = new Array();
+    for(let i=0;i<(data.shifts).length;i++){
+      shift_array.push(data.shifts[i]._id)
+    }
+    all_shifts.forEach(shiftObj => {
+      let user_name = shiftObj["user_name"]
+        document.getElementById("userId").innerHTML="User Name: "+ user_name;
+
+      let shifts = document.createElement("label");
+      shifts.innerText = " - date: " + String(shiftObj.Date) +" from:"+String(shiftObj.StartingHour) + " to: "+String(shiftObj.EndingHour + "\n");
+      let inp = document.createElement("input");
+      inp.type = "checkbox";
+      inp.id = shiftObj.id;
+      inp.className = 'mycheckbox';
+      inp.value = shifts.innerText;
+      if(shift_array.includes(shiftObj.id)){
+            inp.checked=true;       
+         };
+      inp.addEventListener('change', function(){
+          let obj = new Array;
+          document.querySelectorAll('.mycheckbox').forEach(function(elem) {
+            if(elem.checked){
+              obj.push(elem.id)
+            }
+        });
+          update_obj = {"empId": empId,
+                 "shiftId":obj}
+        update_shift_emp(update_obj);
+    });
+     
+      inp.appendChild(shifts);
+      let trObj = document.createElement("tr");
+      trObj.appendChild(inp); 
+      trObj.appendChild(shifts);      
+      body.appendChild(trObj);
+    
+  });
+}
+function logout(){
+    sessionStorage["token"] = ''
+    window.location.href='file:///'+ pathToFolder +'login.html'
+}
+async function delete_emp()
+{
+    let fetchParams = {method : 'DELETE',      
+                      headers :{'Content-Type':'application/json','x-access-token':token}
+                      }
+    if(empId!= null){
+    let resp = await fetch("http://localhost:5000/employee/"+empId,fetchParams);
+    let result =  await resp.json()
+    if(result["Error_autorized"]){
+        alert(result["Error_autorized"]);
+        logout()
+    }
+    if(result["Error"]){
+      alert(result["Error"]);
+    }
+    else{
+      result.forEach(element =>{ 
+        if (Object.keys(element) == 'Error'){
+          {alert(element.Error)};
+        }//end if
+    else {
+        alert(element.Success)
+        document.getElementById("FirstName").value = '';
+        document.getElementById("LastName").value = '';
+        document.getElementById("Department").value = '';
+        document.getElementById("StartWorkYear").value = '';
+        empId = '';
+        window.location.href = "employees.html";
+      }//end else
+        })//end foreach
+    }
+    }
+    }
+
+</script>
+
+<body onload="loadData()">
+<div class="container">
+</br> </br>
+  <h1 style="margin-left: 212px;">Factory Managment - Edit Employee</h1>
+</br> </br>
+  <h5 id="userId" > </h5>
+</br>
+  <form>
+    <div class="form-group">
+      <label for="FirstName">First Name</label>
+      <input type="text" class="form-control" id="FirstName" aria-describedby="emailHelp" placeholder="Enter First Name">
+    </div>
+    <div class="form-group">
+      <label for="LastName">Last Name</label>
+      <input type="text" class="form-control" id="LastName" placeholder="LastName">
+    </div>
+
+    <div class="form-group">
+      <label for="StartWorkYear">Start Work Year</label>
+      <input type="text" class="form-control" id="StartWorkYear" placeholder="Start Work Year">
+    </div>
+    <div class="form-group">
+      <label for="Department">Department Name</label>
+      <input type="text" class="form-control" id="Department" placeholder="department name">
+    </div>
+    <button type="button" class="btn btn-primary" onclick="update_emp()">Update</button>
+    <button type="button" class="btn btn-primary" onclick="delete_emp()">Delete</button>
+    <button type="button" class="btn btn-primary" onclick="window.location.href='file:///'+pathToFolder+'employees.html'">Back</button>
+    <button type="button" class="btn btn-primary" onclick="logout()">Logout</button>
+
+    <div >
+    </br>
+      <table class="table table-striped table-dark table-bordered">
+        <thead>
+          <tr>
+            <th scope="col">Employee shifts - Works automatically, no need to press an update button</th>
+            
+          </tr>
+        </thead>
+        <tbody id="tBody">    
+        </tbody>
+      </table>
+      
+    </div>
+    
+    
+  </form>
+</div>
+ </body>
+</html>

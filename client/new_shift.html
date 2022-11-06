@@ -1,0 +1,125 @@
+<html>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
+<script>
+  let token = sessionStorage["token"]
+  let str = location.pathname.substring(1, location.pathname.length);
+  let pathToFolder = str.split("/").slice(0, -1).join("/")+"/";
+  function logout(){
+    sessionStorage["token"] = ''
+    window.location.href='file:///'+ pathToFolder +'login.html'
+}
+  async function save()
+      
+      { 
+        if(document.getElementById("Date").value == ""){
+          alert("The date field cannot be empty");
+        }
+        else{
+        const date_array = document.getElementById("Date").value.split('/');
+        console.log(date_array)
+          if (date_array[0].length != 2){
+            alert("Please write the date format in the following way: dd/mm/yyyy");
+          }
+          else if (date_array[1].length != 2 ){
+            alert("Please write the date format in the following way: dd/mm/yyyy");
+          }
+          else if(date_array[2].length !=4){
+               alert("Please write the date format in the following way: dd/mm/yyyy");
+            }
+          
+        
+      }
+        if(document.getElementById("StartHour").value == ""){
+          alert("The Start Hour field cannot be empty");
+        }
+        else if(! Number.isInteger(parseInt(document.getElementById("StartHour").value))){
+          alert("The Field Start Hour have to be integer");
+        }
+        else if(document.getElementById("EndHour").value == ""){
+          alert("The End Hour field cannot be empty");
+        }
+        else if(! Number.isInteger(parseInt(document.getElementById("EndHour").value))){
+          alert("The Field End Hour have to be integer");
+        }
+        
+        else {
+        let obj = { date : document.getElementById("Date").value,
+                    starting_hour : parseInt(document.getElementById("StartHour").value),
+                    ending_hour : parseInt(document.getElementById("EndHour").value)
+                  }
+        let fetchParams = {method : 'POST',
+                          body : JSON.stringify(obj),
+                          headers :{'Content-Type':'application/json','x-access-token':token}
+                          }
+        let resp = await fetch("http://localhost:5000/shift",fetchParams);
+        let result =  await resp.json();
+        if(result["Error_autorized"]){
+            alert(result["Error_autorized"]);
+            logout()
+        }
+        if(result["Error"]){
+         alert(result["Error"]);
+        } 
+            result.forEach(element =>{ 
+            if (Object.keys(element) == 'Error'){
+              {alert(element.Error)};
+            }//end if
+            else {
+              alert(element.Success)
+            }//end else
+            })//end foreach
+          }
+      
+      }
+      async function getDataFromServer()
+{  
+  let resp = await fetch("http://localhost:5000/user/get_user",{headers:{'x-access-token':token}});
+    let users = await resp.json();
+    if(users["Error_autorized"]){
+            alert(users["Error_autorized"]);
+            logout()
+        }
+        if(users["Error"]){
+         alert(users["Error"]);
+        } 
+      let user_name = users["user_name"]
+        document.getElementById("userId").innerHTML="User Name: "+ user_name;
+    
+  }
+    
+</script>
+
+<body onload="getDataFromServer()">
+  <div class="container">
+    <br/><br/>
+   <h1 style="margin-left: 208px;">Factory Managment - Create New Shift</h1>
+   <br/><br/>
+  <h5 id="userId" > </h5>
+  <br/>
+  <form>
+    <div class="form-group">
+        <label for="Date">Date</label>
+        <input type="text" class="form-control" id="Date" aria-describedby="emailHelp" placeholder="insert date in format 01/01/2022">
+      </div>
+  
+    <div class="form-group">
+      <label for="StartHour">Starting Hour</label>
+      <input type="text" class="form-control" id="StartHour" aria-describedby="emailHelp" placeholder="start hour">
+    </div>
+
+    <div class="form-group">
+        <label for="EndHour">Ending Hour</label>
+        <input type="text" class="form-control" id="EndHour" aria-describedby="emailHelp" placeholder="end hour">
+      </div>
+    <button type="button" class="btn btn-primary" onclick="save()">Save</button>
+    <button type="button" class="btn btn-primary" onclick="window.location.href='file:///C:/Users/rakef/Desktop/python_full_stack/myProject/python_final_project/client/shift.html'">Cancel</button>
+    <button type="button" class="btn btn-primary" onclick="logout()">Logout</button>
+
+  </form>
+
+</div>
+        
+</body>
+
+</html>

@@ -1,0 +1,115 @@
+
+<html>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
+<script>
+let token = sessionStorage["token"]
+let shiftId;
+let str = location.pathname.substring(1, location.pathname.length);
+let pathToFolder = str.split("/").slice(0, -1).join("/")+"/";
+async function update_shift(){
+    const params = new URLSearchParams(location.search);
+    shiftId = params.get("shift_id");
+    if(document.getElementById("ShiftDate").value == ""){
+      alert("The date field cannot be empty");
+    }
+    else if (document.getElementById("StartingHour").value == ""){
+      alert("Starting Hour field  cannot be empty");
+    }
+    else if(! Number.isInteger(parseInt(document.getElementById("StartingHour").value))){
+        alert("The field Starting Hour must be a positive integer");
+      }
+    else if (document.getElementById("EndingHour").value == ""){
+      alert("Ending Hour field  cannot be empty");
+    }
+    else if(! Number.isInteger(parseInt(document.getElementById("EndingHour").value))){
+        alert("The field Ending Hour must be a positive integer");
+      }
+    else{
+    let obj = {date : document.getElementById("ShiftDate").value,
+              starting_hour : document.getElementById("StartingHour").value,
+              ending_hour : document.getElementById("EndingHour").value
+              }
+  
+    let fetchParams = {method : 'PUT',
+                      body : JSON.stringify(obj),
+                      headers :{'Content-Type':'application/json','x-access-token':token}
+                      }
+    let resp = await fetch("http://localhost:5000/shift/"+shiftId,fetchParams);
+    let result =  await resp.json()
+    if(result["Error_autorized"]){
+            alert(result["Error_autorized"]);
+            logout()
+        }
+        if(result["Error"]){
+         alert(result["Error"]);
+        } 
+           result.forEach(element =>{ 
+        if (Object.keys(element) == 'Error'){
+          {alert(element.Error)};
+        }//end if
+        else {
+          alert(element.Success)
+        }//end else
+       })//end foreach
+}
+}
+
+function logout(){
+    sessionStorage["token"] = ''
+    window.location.href='file:///'+ pathToFolder +'login.html'
+}
+async function loadData()
+{
+    const params = new URLSearchParams(location.search);
+    shiftId = params.get("shift_id");
+    let resp = await fetch("http://localhost:5000/shift/" + shiftId,{headers:{'x-access-token':token}});
+    let data =  await resp.json();
+    if(data["Error_autorized"]){
+            alert(data["Error_autorized"]);
+            logout()
+        }
+        if(data["Error"]){
+         alert(data["Error"]);
+        } 
+    document.getElementById("ShiftDate").value = data.Date;
+    document.getElementById("StartingHour").value = data.StartingHour;
+    document.getElementById("EndingHour").value = data.EndingHour;
+    let user_name = data["user_name"]
+    document.getElementById("userId").innerHTML="User Name: "+ user_name;
+  }
+
+
+
+</script>
+
+<body onload="loadData()">
+<div class="container">
+  <br/><br/>
+  <h1 style="margin-left: 256px;">Factory Managment - Edit shift</h1>
+  <br/><br/>
+  <h5 id="userId" > </h5>
+  <br/>
+  <form>
+    <div class="form-group">
+      <label for="ShiftDate">Shift Date</label>
+      <input type="text" class="form-control" id="ShiftDate" aria-describedby="emailHelp" placeholder="Enter Shift Date">
+    </div>
+    <div class="form-group">
+      <label for="StartingHour">Starting Hour</label>
+      <input type="text" class="form-control" id="StartingHour" placeholder="Enter Starting Hour">
+    </div>
+
+    <div class="form-group">
+      <label for="EndingHour">Ending Hour</label>
+      <input type="text" class="form-control" id="EndingHour" placeholder="Enter Ending Hour">
+    </div>
+    
+    <button type="button" class="btn btn-primary" onclick="update_shift()">Update</button>
+    <button type="button" class="btn btn-primary" onclick="window.location.href='file:///C:/Users/rakef/Desktop/python_full_stack/myProject/python_final_project/client/allocate_shift.html?shift_id='+shiftId">Allocate employees</button>
+    <button type="button" class="btn btn-primary" onclick="window.location.href='file:///C:/Users/rakef/Desktop/python_full_stack/myProject/python_final_project/client/shift.html'">Back</button>
+    <button type="button" class="btn btn-primary" onclick="logout()">Logout</button>
+  </form>
+</div>
+ </body>
+</html>

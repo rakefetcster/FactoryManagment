@@ -1,0 +1,114 @@
+
+<html>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+<script>
+    let token = sessionStorage["token"]
+    let str = location.pathname.substring(1, location.pathname.length);
+    let pathToFolder = str.split("/").slice(0, -1).join("/")+"/";
+function create_button(emp_id,employees_name)
+{
+
+    let btn1 = document.createElement("button");
+    btn1.type="button";
+    btn1.id='btn_'+emp_id;
+    btn1.class ="btn btn-primary";
+    btn1.addEventListener('click', function()
+    {
+        window.location.href="file:///"+ pathToFolder +"edit_employee.html?emp_id="+emp_id
+    });
+    btn1.appendChild(employees_name)
+    return btn1
+}
+async function getDataFromServer()
+{
+    
+    let resp = await fetch("http://localhost:5000/department",{headers:{'x-access-token':token}});
+    let departments = await resp.json();
+    if(departments["Error_autorized"]){
+          alert(departments["Error_autorized"]);
+          logout()
+        }
+        if(departments["Error"]){
+         alert(departments["Error"]);
+        } 
+    let body = document.getElementById("tBody");
+    let manager = ''
+    departments.forEach(department =>
+    {   
+        let user_id = department.user_name
+        console.log(user_id);
+        document.getElementById("userId").innerHTML="User Name: "+ user_id;
+        let manager = ''
+        let department_name = document.createElement("td");
+        department_name.innerText = department.Name
+        
+        let department_manager = document.createElement("td");
+        if (department.manager != undefined){
+            manager = department.manager;
+        }
+        department_manager.innerText = manager
+        
+        let array_names = new Array();
+        department.EmployeesList.forEach(emp =>{
+            let employees_name = document.createElement("td");
+            employees_name.innerText = emp.FirstName+"-"+emp.LastName
+            emp = create_button(emp.id,employees_name)
+            array_names.push(emp)
+        })
+        
+       
+        let btn = document.createElement("button");
+        btn.type="button";
+        btn.id='btn_'+department.id,
+        btn.class ="btn btn-primary";
+        btn.value = "department_name";
+        btn.addEventListener('click', function(){
+            window.location.href="file:///"+ pathToFolder + "edit_department.html?dep_id="+department.id});
+       btn.appendChild(department_name)
+   
+       let trObj = document.createElement("tr");
+       trObj.appendChild(btn);
+       trObj.appendChild(department_manager);
+       for(i=0;i<array_names.length;i++){
+            trObj.appendChild(array_names[i]);
+       }
+       body.appendChild(trObj);
+    
+    });
+    };
+
+    function logout(){
+    sessionStorage["token"] = ''
+    window.location.href='file:///'+ pathToFolder +'login.html'
+}
+</script>
+
+<body onload="getDataFromServer()">
+    <div class="container">
+    <br/><br/>
+    <h1 style="margin-left: 234px;">Factory Managment - Departments</h1> 
+    <br/><br/>
+    <h5 id="userId" > </h5>
+    <br/>
+    <button type="button" class="btn btn-dark" onclick="window.location.href='file:///'+ pathToFolder +'new_department.html'">New Department</button>
+    <button  class="btn btn-dark" onclick="window.location.href='file:///'+ pathToFolder +'index.html'">main page</button>
+    <button type="button" class="btn btn-dark" onclick="logout()">Logout</button>
+
+    <br/> <br/>
+
+
+    <table class="table table-striped table-dark table-bordered">
+        <thead>
+          <tr>
+            <th scope="col">Department Name</th>
+            <th scope="col">Department Manager</th>
+            <th scope="col">Employees</th>
+          </tr>
+        </thead>
+        <tbody id="tBody">
+         
+        </tbody>
+      </table>
+</div>
+</body>
+</html>

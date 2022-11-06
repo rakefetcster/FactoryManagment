@@ -1,0 +1,59 @@
+<html>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+<script>
+
+async function login()
+{
+    
+    let username = document.getElementById("username").value;
+    let email = document.getElementById("email").value;
+    if (username == ''){
+        alert("username field can't be empty");
+    }
+    else if(email== ''){
+        alert("email field can't be empty");
+    }
+    else {
+        let obj = {username : username, email : email};
+        let resp = await fetch("http://localhost:5000/auth/login",  { method : "POST", body : JSON.stringify(obj), headers : {"Content-Type" : "application/json"} } )
+        let data = await resp.json();
+        if(data["Error_autorized"]){
+            alert(data["Error_autorized"]);
+            logout()
+        }
+        if(data["Error"]){
+         alert(data["Error"]);
+        }
+        
+            if (data.token){
+                sessionStorage["token"] = data.token;
+                //sessionStorage["count_enties"] = data.count_enties
+                window.location.href = "index.html";
+            }
+            else if (data.error){
+                alert(data.error);
+            }
+    
+        
+    }
+}
+
+
+</script>
+
+<body>
+    <br/><br/>
+    <h1 style="margin-left: 400px;">Factory Management - Login</h1>
+    <div class="container">
+        <br/><br/>
+        <div style="margin-left: 300px;">
+        User Name : <input type="text" id="username"> <br/>
+        <br/>
+        Email : <input style="width: 231px;"type="text" id="email"> <br/>
+        <br/>
+        <input style="width: 281px;" type="button" value="Login" onclick="login()">
+    </div>
+    </div>
+     
+</body>
+</html>

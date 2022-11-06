@@ -1,0 +1,217 @@
+
+<html>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
+<script>
+  let token = sessionStorage["token"]
+  let str = location.pathname.substring(1, location.pathname.length);
+  let pathToFolder = str.split("/").slice(0, -1).join("/")+"/";
+  let managerId;
+  let depId;
+
+  async function update_emp_department(empId,obj)
+  {
+    let fetchParams = {method : 'PUT',
+                        body : JSON.stringify(obj),
+                        headers :{'Content-Type':'application/json','x-access-token':token}
+                        }
+      let resp = await fetch("http://localhost:5000/employee/"+empId,fetchParams);
+      let data =  resp.json()
+      if(data["Error_autorized"]){
+        alert(data["Error_autorized"]);
+        logout()
+    }
+    if(data["Error"]){
+      alert(data["Error"]);
+    }
+  }
+  async function update_dep()
+  {
+    const params = new URLSearchParams(location.search);
+    depId = params.get("dep_id");
+    if (document.getElementById("Name").value == ""){
+      alert("The department field cannot be empty")
+    }
+    else if (document.getElementById("Manager").value == ""){
+      alert("The Manager field cannot be empty")
+    }
+    else{
+      manager_name = document.getElementById("Manager").value;
+      if (!manager_name.includes("-")){
+        alert("The manager's name is invalid - it should be like this: first name - last name");
+        manager_name = ''
+      }
+      let obj = {name : document.getElementById("Name").value,
+                  manager : manager_name,
+                  manager_Id : managerId
+                  }
+      
+        let fetchParams = {method : 'PUT',
+                          body : JSON.stringify(obj),
+                          headers :{'Content-Type':'application/json','x-access-token':token}
+                          }
+        let resp = await fetch("http://localhost:5000/department/"+depId,fetchParams);
+        result =  await resp.json()
+        if(result["Error_autorized"]){
+        alert(result["Error_autorized"]);
+        logout()
+    }
+    if(result["Error"]){
+      alert(result["Error"]);
+    }
+        result.forEach(element =>{ 
+          if (Object.keys(element) == 'Error'){
+            {alert(element.Error)};
+          }//end if
+          else {
+            alert(element.Success)
+          }//end else
+          })//end foreach
+    }
+    }
+
+
+  async function loadData()
+  {
+    const params = new URLSearchParams(location.search);
+    depId = params.get("dep_id");
+    the_manager = ''
+      let resp = await fetch("http://localhost:5000/department/"+depId,{headers:{'x-access-token':token}});
+      let data =  await resp.json();
+      if(data["Error_autorized"]){
+        alert(data["Error_autorized"]);
+        logout()
+    }
+    if(data["Error"]){
+      alert(data["Error"]);
+    }
+      let resp1 = await fetch("http://localhost:5000/employee",{headers:{'x-access-token':token}});
+      let employees =  await resp1.json();
+      if(employees["Error_autorized"]){
+        alert(employees["Error_autorized"]);
+        logout()
+    }
+    if(employees["Error"]){
+      alert(employees["Error"]);
+    }
+      let body = document.getElementById("tBody");
+      document.getElementById("Name").value = data.Name;
+      if(data.manager != undefined){
+        the_manager = data.manager
+      }
+      document.getElementById("Manager").value = the_manager;
+      managerId = data.managerId
+      
+      employees.forEach(empObj => {
+        let user_name = empObj["user_name"]
+        document.getElementById("userId").innerHTML="User Name: "+ user_name;
+
+        if (empObj["departmentId"] != data.id){
+          let employee = document.createElement("label");
+          employee.innerText = " - "+String(empObj.FirstName) +"-"+String(empObj.LastName) + "\n";
+          let inp = document.createElement("input");
+          inp.type = "checkbox";
+          inp.id = empObj.id;
+          inp.className = 'mycheckbox';
+          inp.value = employee.innerText;
+          inp.addEventListener('change', function(){
+              let obj = new Array;
+              document.querySelectorAll('.mycheckbox').forEach(function(elem) {
+                if(elem.checked){
+                  obj.push(elem.id)
+                }
+            });
+              update_obj = {"department":data.id}
+            update_emp_department(empObj.id,update_obj);
+        });
+        
+          inp.appendChild(employee);
+          let trObj = document.createElement("tr");
+          trObj.appendChild(inp); 
+          trObj.appendChild(employee);      
+          body.appendChild(trObj);
+        }//end if
+      });
+  
+    }
+    function logout(){
+    sessionStorage["token"] = ''
+    window.location.href='file:///'+ pathToFolder +'login.html'
+}
+  async function delete_all_dep()
+  {
+      obj ={departmentId:depId}
+      let fetchParams = {method : 'DELETE', 
+                        body : JSON.stringify(obj),     
+                        headers :{'Content-Type':'application/json','x-access-token':token}
+                        }
+      if(depId!= null){
+      let resp = await fetch("http://localhost:5000/department/",fetchParams);
+      result =  await resp.json()
+      if(result["Error_autorized"]){
+        alert(result["Error_autorized"]);
+        logout()
+    }
+    if(result["Error"]){
+      alert(result["Error"]);
+    }
+        result.forEach(element =>{ 
+          if (Object.keys(element) == 'Error'){
+            {alert(element.Error)};
+          }//end if
+    else {
+        alert(element.Success)
+      }//end else
+         })//end foreach
+    }
+      
+      document.getElementById("Name").value = '';
+      document.getElementById("Manager").value = '';
+      
+      depId = '';
+  }
+
+</script>
+
+<body onload="loadData()">
+ 
+<div class="container">
+</br></br>
+  <h1 style="margin-left: 134px;">Factory Managment - Edit Department</h1>
+</br></br>
+  <h5 id="userId" > </h5>
+</br>
+  <form>
+    <div class="form-group">
+      <label for="Name">Ddepartment Name</label>
+      <input type="text" class="form-control" id="Name" aria-describedby="emailHelp" placeholder="Enter department Name">
+    </div>
+    <div class="form-group">
+      <label for="Manager">manager Name</label>
+      <input type="text" class="form-control" id="Manager" placeholder=" please write : firstname-lastname">
+    </div>
+
+    
+    <button type="button" class="btn btn-primary" onclick="update_dep()">Update</button>
+    <button type="button" class="btn btn-primary" onclick="delete_all_dep()">Delete All Departments</button>
+    <button type="button" class="btn btn-primary" onclick="window.location.href='file:///'+ pathToFolder +'department.html'">Back To Departments</button>
+    <button type="button" class="btn btn-primary" onclick="logout()">Logout</button>
+
+  </br>
+    <table class="table table-striped table-dark table-bordered">
+      <thead>
+        <tr>
+          <th scope="col">Employee to choose - Works automatically, no button needed</th>
+          
+        </tr>
+      </thead>
+      <tbody id="tBody">
+        
+      </br>
+  
+      </tbody>
+    </table>
+  </form>
+</div>
+ </body>
+</html>

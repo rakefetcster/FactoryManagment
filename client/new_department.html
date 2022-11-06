@@ -1,0 +1,85 @@
+<html>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
+<script>
+let token = sessionStorage["token"]
+let str = location.pathname.substring(1, location.pathname.length);
+let pathToFolder = str.split("/").slice(0, -1).join("/")+"/";
+function logout(){
+    sessionStorage["token"] = ''
+    window.location.href='file:///'+ pathToFolder +'login.html'
+}
+async function save()
+{
+  if (document.getElementById("departmentName").value == ""){
+    alert("The department field cannot be empty");
+  }
+  else{
+  let obj = {department_name : document.getElementById("departmentName").value}
+  let fetchParams = {method : 'POST',
+                      body : JSON.stringify(obj),
+                      headers :{'Content-Type':'application/json','x-access-token':token}
+                      }
+    let resp = await fetch("http://localhost:5000/department",fetchParams);
+    let result =  await resp.json()
+    if(result["Error_autorized"]){
+            alert(result["Error_autorized"]);
+            logout()
+        }
+        if(result["Error"]){
+         alert(result["Error"]);
+        } 
+          result.forEach(element =>{ 
+    if (Object.keys(element) == 'Error'){
+        alert(element.Error);
+    }//end if
+    else {
+        alert(element.Success);
+        window.location.href = "department.html";
+    }//end else
+    })//end foreach
+  }
+}
+async function getDataFromServer()
+{  
+  let resp = await fetch("http://localhost:5000/user/get_user",{headers:{'x-access-token':token}});
+    let users = await resp.json();
+    if(users["Error_autorized"]){
+            alert(users["Error_autorized"]);
+            logout()
+        }
+        if(users["Error"]){
+         alert(users["Error"]);
+        } 
+      let user_name = users["user_name"]
+        document.getElementById("userId").innerHTML="User Name: "+ user_name;
+   
+  }
+
+ 
+</script>
+
+<body onload="getDataFromServer()">
+
+<div class="container">
+  <br/><br/>
+  <h1 style="margin-left: 100px;">Factory Managment - Create New Department</h1>
+  <br/><br/>
+  <h5 id="userId" > </h5>
+  <br/>
+  <form>
+    <div class="form-group">
+      <label for="departmentName">department name</label>
+      <input type="text" class="form-control" id="departmentName" aria-describedby="emailHelp" placeholder="please write department name">
+    </div>
+    <button type="button" class="btn btn-primary" onclick="save()">Save</button>
+    <button type="button" class="btn btn-primary" onclick="window.location.href='file:///C:/Users/rakef/Desktop/python_full_stack/myProject/python_final_project/client/department.html'">Cancel</button>
+    <button type="button" class="btn btn-primary" onclick="logout()">Logout</button>
+
+  </form>
+
+</div>
+        
+</body>
+
+</html>

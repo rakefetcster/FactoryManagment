@@ -1,0 +1,130 @@
+
+<html>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+<script>
+let token = sessionStorage["token"]
+let str = location.pathname.substring(1, location.pathname.length);
+let pathToFolder = str.split("/").slice(0, -1).join("/")+"/";
+let shiftId;
+async function update_shift_emp(obj)
+{
+  let fetchParams = {method : 'POST',
+                      body : JSON.stringify(obj),
+                      headers :{'Content-Type':'application/json','x-access-token':token}
+                      }
+    let resp = await fetch("http://localhost:5000/shift_emp",fetchParams);
+    let data =  resp.json()
+    if(data["Error"]){
+      alert(data["Error"]);
+      logout()
+
+    }
+}
+
+async function getDataFromServer()
+{
+    const params = new URLSearchParams(location.search);
+    shiftId = params.get("shift_id");
+    let resp = await fetch("http://localhost:5000/employee",{headers:{'x-access-token':token}});
+    let employees = await resp.json();
+    if(employees["Error"]){
+      alert(employees["Error"]);
+      logout()
+
+    }
+    let body = document.getElementById("tBody");
+    shift_array = new Array();
+
+    employees.forEach(employee =>
+    {   
+        let emp_id = employee.id;
+        employee.shifts.forEach(shift => {
+            shift_array.push(shift.id);
+        });
+        let user_name = employee["user_name"]
+        document.getElementById("userId").innerHTML="User Name: "+ user_name;
+
+        let user_shifts = employee.shifts._id;
+        let FullName = document.createElement("label");
+        FullName.innerText = "- " + employee.FirstName + "-" + employee.LastName;
+        let inp = document.createElement("input");
+        inp.type = "checkbox";
+        inp.id = 'inp_'+emp_id;
+        inp.value = FullName.innerText
+        console.log(shift_array)
+        if(shift_array.includes(shiftId)){
+            inp.checked=true;       
+         }
+        inp.addEventListener('change', function(){
+            let obj = new Array;
+            if (inp.checked == true){
+                 if (shift_array != [] ){
+                    shift_array.forEach(shift => {
+                        if(shift !=shiftId && ! obj.includes(shift))
+                            obj.push(shift)
+                    });
+                    if(! obj.includes(shiftId))
+                        obj.push(shiftId);
+                }//end if
+                else{
+                    obj = shiftId
+                }//end else
+                update_obj = {"empId":emp_id,
+                "shiftId":obj}
+                update_shift_emp(update_obj);
+            }//end if
+        
+           else{
+                if (shift_array.includes(shiftId)){
+                    for( let i = 0; i < shift_array.length; i++){ 
+                        if (shift_array[i] == shiftId){
+                            shift_array.splice(i, 1)
+                            i--;
+                        }//end if
+                    };//end for
+                }
+                obj = shift_array
+            }//end else
+            update_obj = {"empId":emp_id,
+                "shiftId":obj}
+                update_shift_emp(update_obj);
+        });
+        
+        inp.appendChild(FullName);
+        let trObj = document.createElement("tr");
+        trObj.appendChild(inp);
+        trObj.appendChild(FullName);
+        body.appendChild(trObj);
+    
+    });
+}
+function logout(){
+    sessionStorage["token"] = ''
+    window.location.href='file:///'+ pathToFolder +'login.html'
+}
+</script>
+
+<body onload="getDataFromServer()">
+    <div class="container">
+    <br/><br/>
+    <h1 style="margin-left: 145px;">Factory Managment - Allocate Employees</h1>  
+    <br/><br/> 
+    <h5 id="userId"> </h5>
+    <br/>
+    <table class="table table-striped table-dark table-bordered">
+        <thead>
+          <tr>
+            <th scope="col">Full Name - The employee will be associated with the department by checking</th>
+
+          </tr>
+        </thead>
+        <tbody id="tBody">
+        </tbody>
+      </table>
+      <button type="button" class="btn btn-primary" onclick="window.location.href='file:///'+pathToFolder+'shift.html'">Back to shift page</button>
+    <button type="button" class="btn btn-primary" onclick="logout()">Logout</button>
+    
+</div>
+
+</body>
+</html>

@@ -1,0 +1,102 @@
+<html>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
+<script>
+let token = sessionStorage["token"]
+let str = location.pathname.substring(1, location.pathname.length);
+let pathToFolder = str.split("/").slice(0, -1).join("/")+"/";
+async function save()
+{
+  if (document.getElementById("FirstName").value == ''){
+    alert("The first name field cannot be empty")
+    return false;
+  }
+  else if (document.getElementById("LastName").value == ''){
+    alert("The last name field cannot be empty")
+    return false;
+  }
+  else if (document.getElementById("DepartmentName").value == ''){
+    alert("The department name field cannot be empty")
+    return false;
+  }
+  else{
+    let obj = {first_name : document.getElementById("FirstName").value,
+              last_name : document.getElementById("LastName").value,
+              department_name : document.getElementById("DepartmentName").value}
+    let fetchParams = {method : 'POST',
+                        body : JSON.stringify(obj),
+                        headers :{'Content-Type':'application/json','x-access-token':token}
+                        }
+      let resp = await fetch("http://localhost:5000/employee",fetchParams,obj);
+      let result =  await resp.json()
+      if(result["Error_autorized"]){
+            alert(result["Error_autorized"]);
+            logout()
+        }
+        if(result["Error"]){
+         alert(result["Error"]);
+        } 
+      result.forEach(element =>{ 
+      if (Object.keys(element) == 'Error'){
+        {alert(element.Error)};
+      }//end if
+      else {
+        alert(element.Success)
+        window.location.href = "employees.html";
+      }//end else
+     })//end foreach
+  }
+}
+function logout(){
+    sessionStorage["token"] = ''
+    window.location.href='file:///'+ pathToFolder +'login.html'
+}
+async function getDataFromServer()
+{  
+  let resp = await fetch("http://localhost:5000/user/get_user",{headers:{'x-access-token':token}});
+    let users = await resp.json();
+    if(users["Error_autorized"]){
+            alert(users["Error_autorized"]);
+            logout()
+        }
+        if(users["Error"]){
+         alert(users["Error"]);
+        } 
+      let user_name = users["user_name"]
+        document.getElementById("userId").innerHTML="User Name: "+ user_name;
+    
+  }
+</script>
+
+<body onload="getDataFromServer()">
+  
+<div class="container">
+  <br/><br/>
+  <h1 style="margin-left: 153px;">Factory Managment - Create New Employee</h1>
+  <br/><br/>
+  <h5 id="userId" > </h5>
+  <form>
+    <div class="form-group">
+      <label for="FirstName">first name</label>
+      <input type="text" class="form-control" id="FirstName" aria-describedby="emailHelp" placeholder="Enter first name">
+    </div>
+    <div class="form-group">
+      <label for="LastName">last name</label>
+      <input type="text" class="form-control" id="LastName" placeholder="Enter last name">
+    </div>
+    <div class="form-group">
+      <label for="DepartmentName">Department name</label>
+      <input type="text" class="form-control" id="DepartmentName" placeholder="Enter department name">
+    </div>
+    
+    <button type="button" class="btn btn-primary" onclick="save()">Save</button>
+    <button type="button" class="btn btn-primary" onclick="window.location.href='file:///C:/Users/rakef/Desktop/python_full_stack/myProject/python_final_project/client/employees.html'">Cancel</button>
+    <button type="button" class="btn btn-primary" onclick="logout()">Logout</button>
+
+  </form>
+
+</div>
+        
+</body>
+
+</html>

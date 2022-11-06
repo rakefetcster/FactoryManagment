@@ -1,0 +1,193 @@
+<html>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+<script>
+let token = sessionStorage["token"]
+let str = location.pathname.substring(1, location.pathname.length);
+let pathToFolder = str.split("/").slice(0, -1).join("/")+"/";
+function choose(){
+  let val = document.getElementById("departments");
+  let selectedValue =val.options[val.selectedIndex].value;
+    getDataFromServer(selectedValue);
+}
+
+async function getDepartments() {
+
+    let resp = await fetch("http://localhost:5000/department" ,{headers:{'x-access-token':token}});
+    let departments = await resp.json();
+    if(departments["Error_autorized"]){
+        alert(departments["Error_autorized"]);
+        logout()
+    }
+    if(departments["Error"]){
+      alert(departments["Error"]);
+    }
+    let select = document.createElement("select");
+    let label = document.createElement("label");
+    select.name = "departments";
+    select.id = "departments";
+    if (departments.length > 0)
+      select.setAttribute("onclick", "choose()");
+    departments.forEach(department =>
+    { 
+      let option = document.createElement("option");
+        option.value = department.Name;
+        option.text = department.Name;
+        select.appendChild(option);
+      }); 
+        
+        label.innerHTML = "Choose your department: "
+        label.htmlFor = "departments";
+    
+        document.getElementById("department").appendChild(label).appendChild(select);
+
+  };
+
+  function logout(){
+    sessionStorage["token"] = ''
+    window.location.href='file:///'+ pathToFolder +'login.html'
+}
+async function postDataToClient(url,obj)
+{
+  let fetchParams = {method : 'POST',
+                      body : JSON.stringify(obj),
+                      headers :{'Content-Type':'application/json','x-access-token':token}
+                      }
+    let resp = await fetch(window.location.href=url,fetchParams);
+    let data =  resp.json()
+    if(data["Error_autorized"]){
+        alert(data["Error_autorized"]);
+        logout()
+    }
+    if(data["Error"]){
+      alert(data["Error"]);
+    }
+    
+}
+
+
+async function getDataFromServer(dep_name = '')
+{  
+  
+  let Table = document.getElementById("tBody");
+  Table.innerHTML = "";
+  let resp = await fetch("http://localhost:5000/employee",{headers:{'x-access-token':token}});
+    
+    let employees = await resp.json();
+    if(employees["Error_autorized"]){
+        alert(employees["Error_autorized"]);
+        logout()
+    }
+    if(employees["Error"]){
+      alert(employees["Error"]);
+    }
+    let body = document.getElementById("tBody");
+    employees.forEach(employee =>
+    {  
+      
+      if((dep_name !='' &&  dep_name == employee.Department) || (dep_name =='')){
+      let obj = {FirstName : employee.FirstName,
+          LastName : employee.LastName,
+          DepartmentName : employee.Department,
+          StartWorkYear : employee.StartWorkYear
+          }
+        let user_id = employee.user_name
+        console.log(user_id);
+        document.getElementById("userId").innerHTML="User Name: "+ user_id;
+        let id = employee.id
+        let FullName = document.createElement("td");
+        FullName.innerText = employee.FirstName + "-" + employee.LastName;
+        let departmentName = document.createElement("td");
+        if(employee.Department != '' && employee.Department != undefined)
+          departmentName.innerText = employee.Department;
+        else
+          departmentName.innerText = "";
+        
+        let shifts = document.createElement("td");
+        let shift_list_str = '';
+        if (employee.shifts.length > 0){
+          employee.shifts.forEach(shiftObj =>{
+            shift_list_str = shift_list_str.concat( "date: " + String(shiftObj.date) +" from:"+String(shiftObj.starting_hour) + " to: "+String(shiftObj.ending_hour + "\n"));
+          });
+          
+        }
+        else{
+          shift_list_str = "No shift allocated to this employee";
+        }
+        shifts.innerText = shift_list_str;
+        let btn1 = document.createElement("button");
+        btn1.type="button";
+        btn1.id='btn_'+id;
+        btn1.class ="btn btn-primary"
+        btn1.addEventListener('click', function(){
+          postDataToClient("file:///"+ pathToFolder +"edit_employee.html?emp_id="+id,obj);
+        }); 
+        btn1.appendChild(FullName);
+ 
+        let btn2 = document.createElement("button");
+        btn2.type="button";
+        btn2.id='btn_'+id;
+        btn2.class ="btn btn-primary";
+        btn2.addEventListener('click', function(){
+          postDataToClient("file:///"+ pathToFolder +"edit_department.html?dep_id="+employee.departmentId,obj);
+        });
+      if(employee.Department != '' && employee.Department != undefined)
+        btn2.appendChild(departmentName);
+       
+       
+       let trObj = document.createElement("tr");
+       trObj.appendChild(btn1);
+       trObj.appendChild(shifts);
+       if(employee.Department != '' && employee.Department != undefined){
+        trObj.appendChild(btn2);
+       }
+       else{
+        trObj.appendChild(departmentName);
+       }
+      
+       
+       body.appendChild(trObj);
+      }
+    })
+  
+  
+}
+
+</script>
+
+<body onload="getDataFromServer()">
+<div class="container">
+  <br><br>
+  <h1 style="margin-left: 234px;">Factory Managment - Employess</h1>
+  <br><br>
+  <h5 id="userId" > </h5>
+  <br>
+    <button  class="btn btn-dark" onclick="window.location.href='file:///'+ pathToFolder +'new_employee.html'">New Employee</button>
+    <button  class="btn btn-dark" onclick="window.location.href='file:///'+ pathToFolder +'index.html'">main page</button>
+    <button type="button" class="btn btn-dark" onclick="logout()">Logout</button>
+    
+    <br/> <br/>
+     <div id = "department" >
+    <button  class="btn btn-dark" onclick="getDepartments()">Sort Department</input>
+  </div>
+      <br><br>
+    </form>
+      </body>
+  </html>
+    <br/> <br/>
+
+
+    <table class="table table-striped table-dark table-bordered">
+        <thead>
+          <tr>
+            <th scope="col">FullName</th>
+            <th scope="col">Shifts</th>
+            <th scope="col">Department</th>
+          </tr>
+        </thead>
+        <tbody id="tBody">
+         
+        </tbody>
+      </table>
+</div>
+</body>
+</html>
