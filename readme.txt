@@ -1,6 +1,8 @@
 Factory - Management
 
 Welcome to factory management, below is a brief explanation:
+	server side: python with flask 
+	client side: native js 
 1. The project uses mongoDB with the collectios names:
 	employees, departments, shifts, shift_emp, users
 	
